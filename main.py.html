@@ -1,0 +1,87 @@
+<html>
+<head>
+<title>main.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">string</span>
+<span class="s0">import </span><span class="s1">os</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">from </span><span class="s1">nltk.tokenize </span><span class="s0">import </span><span class="s1">sent_tokenize</span><span class="s0">, </span><span class="s1">word_tokenize</span>
+<span class="s0">from </span><span class="s1">nltk.corpus </span><span class="s0">import </span><span class="s1">brown</span><span class="s0">, </span><span class="s1">stopwords</span>
+<span class="s0">from </span><span class="s1">nltk.stem.porter </span><span class="s0">import </span><span class="s1">PorterStemmer</span>
+<span class="s0">from </span><span class="s1">sklearn.feature_extraction.text </span><span class="s0">import </span><span class="s1">TfidfVectorizer</span><span class="s0">,</span><span class="s1">TfidfTransformer</span><span class="s0">, </span><span class="s1">CountVectorizer</span>
+<span class="s0">from </span><span class="s1">sklearn.metrics.pairwise </span><span class="s0">import </span><span class="s1">cosine_similarity</span>
+
+<span class="s2">#Step 1 Install Python and NLTK</span>
+<span class="s1">print(brown.words())</span>
+<span class="s1">print()</span>
+
+<span class="s2">#Step2 tokenize, stop word removal, stemming</span>
+<span class="s1">data_path = </span><span class="s3">'/Users/maksy/Desktop/demodata'</span>
+<span class="s1">token_dict = {}</span>
+<span class="s1">rawDoc = {}</span>
+<span class="s1">all_stemmed_words = []</span>
+<span class="s1">ps = PorterStemmer()</span>
+<span class="s1">stop_words = set(stopwords.words(</span><span class="s3">&quot;english&quot;</span><span class="s1">))</span>
+<span class="s1">punc = set(string.punctuation)</span>
+<span class="s2">#output_file = open('/Users/maksy/Desktop/demoDataOutput.txt','w')</span>
+<span class="s1">text_lines = </span><span class="s3">&quot;</span><span class="s0">\n</span><span class="s3">&quot;</span>
+
+<span class="s0">for </span><span class="s1">subir</span><span class="s0">, </span><span class="s1">dirs</span><span class="s0">, </span><span class="s1">files </span><span class="s0">in </span><span class="s1">os.walk(data_path):</span>
+    <span class="s0">for </span><span class="s1">file </span><span class="s0">in </span><span class="s1">files:</span>
+        <span class="s1">file_path = subir + os.path.sep + file</span>
+        <span class="s1">file_contents = open(file_path</span><span class="s0">,</span><span class="s3">'r'</span><span class="s1">)</span>
+        <span class="s0">if </span><span class="s3">'.txt' </span><span class="s0">in </span><span class="s1">file_path:</span>
+            <span class="s1">text = file_contents.read()</span>
+            <span class="s1">lowered = text.lower()</span>
+            <span class="s1">token_dict[file] = lowered</span>
+            <span class="s1">rawDoc[file] = lowered</span>
+            <span class="s1">file_contents.close()</span>
+<span class="s1">num_docs = len(token_dict)</span>
+
+<span class="s1">doc_names = []</span>
+<span class="s0">for </span><span class="s1">file_name </span><span class="s0">in </span><span class="s1">token_dict.keys():</span>
+    <span class="s1">doc_names.append(file_name)</span>
+
+<span class="s2">#tokenizing</span>
+<span class="s0">for </span><span class="s1">x</span><span class="s0">,</span><span class="s1">file </span><span class="s0">in </span><span class="s1">enumerate(token_dict.keys()):</span>
+    <span class="s1">words = word_tokenize(token_dict[file])</span>
+    <span class="s1">print(</span><span class="s3">&quot;Tokenized file %s: %s&quot; </span><span class="s1">% (doc_names[x]</span><span class="s0">,</span><span class="s1">words))</span>
+    <span class="s1">stemmed_words = []</span>
+    <span class="s0">for </span><span class="s1">w </span><span class="s0">in </span><span class="s1">words:</span>
+        <span class="s2">#removing stop words and punctuation</span>
+        <span class="s0">if </span><span class="s1">w </span><span class="s0">not in </span><span class="s1">stop_words | punc:</span>
+            <span class="s2">#stemming</span>
+            <span class="s1">stemmed_words.append(ps.stem(word=w))</span>
+    <span class="s1">print(</span><span class="s3">&quot;Stemming and stop word removed %s: %s </span><span class="s0">\n</span><span class="s3">&quot; </span><span class="s1">% (doc_names[x]</span><span class="s0">, </span><span class="s1">stemmed_words))</span>
+    <span class="s1">all_stemmed_words.append(stemmed_words)</span>
+
+<span class="s2">#Step 3 tf-idf</span>
+<span class="s1">tfidf = TfidfVectorizer(input=all_stemmed_words</span><span class="s0">,</span><span class="s1">stop_words=</span><span class="s3">'english'</span><span class="s1">)</span>
+<span class="s1">tfs = tfidf.fit_transform(token_dict.values())</span>
+<span class="s1">doc_matrix = tfs.toarray()</span>
+<span class="s1">set_vocab = tfidf.get_feature_names()</span>
+<span class="s1">df = pd.DataFrame(doc_matrix</span><span class="s0">, </span><span class="s1">columns=set_vocab)</span>
+<span class="s1">df.index = doc_names</span>
+<span class="s1">df.to_csv(</span><span class="s3">'/Users/maksy/Desktop/out.csv'</span><span class="s1">)</span>
+
+<span class="s2">#Step 4 pairwise cosine similarity</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(</span><span class="s4">0</span><span class="s0">,</span><span class="s1">len(doc_names)):</span>
+    <span class="s0">for </span><span class="s1">j </span><span class="s0">in </span><span class="s1">range(i</span><span class="s0">,</span><span class="s1">len(doc_names)):</span>
+        <span class="s1">print(</span><span class="s3">&quot;Cosine similarity between %s to %s is %s. </span><span class="s0">\n</span><span class="s3">&quot; </span><span class="s1">% (</span>
+              <span class="s1">doc_names[i]</span><span class="s0">, </span><span class="s1">doc_names[j]</span><span class="s0">, </span><span class="s1">cosine_similarity(tfs[i</span><span class="s0">,</span><span class="s1">]</span><span class="s0">,</span><span class="s1">tfs[j</span><span class="s0">,</span><span class="s1">])))</span></pre>
+</body>
+</html>
